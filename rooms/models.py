@@ -26,6 +26,8 @@ class Message(models.Model):
     updated = models.DateTimeField(auto_now=True) # Updates on every save  
     created = models.DateTimeField(auto_now_add=True)  # Set once on creation
     
+    class Meta:
+        ordering = ['-created', '-updated']
     
     
     def __str__(self):

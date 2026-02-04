@@ -73,24 +73,33 @@ def home(request):
                                 )
     topics = Topic.objects.all()
     room_count = rooms.count()
-    context = {'rooms':rooms, 'topics':topics, 'room_count':room_count}
+    room_messages =  Message.objects.filter(Q(room__topic__name__icontains = q))
+    context = {'rooms':rooms, 'topics':topics, 'room_count':room_count, 'room_messages':room_messages}
     return render(request, 'room/index.html',context)
 
 def room(request,pk):
     # room  = Room.objects.get(id=pk)
     room = get_object_or_404(Room, id=pk)
-    messages = room.message_set.all().order_by('-created')#fetches all messages related to that room and orders them by created time
+    room_messages = room.message_set.all()#fetches all messages related to that room and orders them by created time
     participants = room.participants.all()
     #handle new message
     if request.method == 'POST':
-        messages = Message.objects.create(
+        message = Message.objects.create(
             user = request.user,
             room = room,
             body = request.POST.get('body')
         )
         room.participants.add(request.user)
         return redirect('room', pk=room.id)
-    return render(request, 'room/room.html',{'room':room, 'messages':messages, 'participants':participants})
+    return render(request, 'room/room.html',{'room':room, 'room_messages':room_messages, 'participants':participants})
+
+def userProfile(request, pk):
+    user  = get_object_or_404(User, pk=pk)
+    rooms = user.room_set.all()
+    room_messages = user.message_set.all()
+    topics = Topic.objects.all()
+    context = {'user':user, 'rooms':rooms, 'topics':topics, 'room_messages':room_messages}
+    return render(request, 'room/profile.html',context)
 
 @login_required(login_url='login')
 ##crud operations
@@ -100,7 +109,9 @@ def createRoom(request):
         # print(request.POST)
         form = RoomForm(request.POST)
         if form.is_valid():
-            form.save()
+            room = form.save(commit=False)
+            room.host = request.user
+            room.save()
             return redirect('home')
         
     context = {'form':form}
