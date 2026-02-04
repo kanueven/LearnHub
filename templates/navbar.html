@@ -1,0 +1,16 @@
+<nav class="navbar bg-body-tertiary">
+  <div class="container-fluid">
+    <a class="navbar-brand">LearnHub</a>
+    <form class="d-flex" role="search" method = "GET " action = "{%url 'home'%}">
+      <input class="form-control me-2"name = "q" type="search" placeholder="Search Rooms.." aria-label="Search" />
+      
+      {%if user.is_authenticated%}
+      <p> Hello, {{request.user}} </p>
+      <a href = "{%url 'logout' %}"> Logout</a>
+      {%else%}
+      <a href = "{%url 'login' %}"> Login</a>
+      {%endif%}
+
+    </form>
+  </div>
+</nav>
