@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate,login,logout
 from topics.models import Topic
-from .models import Room
+from .models import Room,Message
 from django.shortcuts import get_object_or_404
 from .forms import RoomForm
 
@@ -23,7 +23,7 @@ def loginPage(request):
     if request.user.is_authenticated:
         return redirect('home')
     if request.method == 'POST':
-        username = request.POST.get('username').lower()
+        username = request.POST.get('username')
         password = request.POST.get('password')
 
         try:
@@ -40,8 +40,8 @@ def loginPage(request):
             messages.error(request, 'Username OR password does not exist')
         context = {'page': page}
         return render(request, 'room/login_register.html', context)
-
-    return render(request, 'room/login_register.html')
+    return render(request,'room/login_register.html',{'page':page})
+    
 
 def logoutUser(request):
     logout(request)
@@ -79,7 +79,18 @@ def home(request):
 def room(request,pk):
     # room  = Room.objects.get(id=pk)
     room = get_object_or_404(Room, id=pk)
-    return render(request, 'room/room.html',{'room':room})
+    messages = room.message_set.all().order_by('-created')#fetches all messages related to that room and orders them by created time
+    participants = room.participants.all()
+    #handle new message
+    if request.method == 'POST':
+        messages = Message.objects.create(
+            user = request.user,
+            room = room,
+            body = request.POST.get('body')
+        )
+        room.participants.add(request.user)
+        return redirect('room', pk=room.id)
+    return render(request, 'room/room.html',{'room':room, 'messages':messages, 'participants':participants})
 
 @login_required(login_url='login')
 ##crud operations
@@ -120,3 +131,14 @@ def deleteRoom(request,pk):
         room.delete()
         return redirect('home')
     return render(request, 'room/delete.html', {'obj':room})
+
+#delete message
+@login_required(login_url='login')
+def deleteMessage(request,pk):
+    messages = get_object_or_404(Message,pk = pk)
+    if request.user != messages.user:
+        return HttpResponse('this is not your message you cannot delete it')
+    if request.method == 'POST':
+        messages.delete()
+        return redirect('home')
+    return render(request, 'room/delete.html', {'obj':messages})

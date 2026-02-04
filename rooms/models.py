@@ -9,7 +9,7 @@ class Room(models.Model):
     topic = models.ForeignKey('topics.Topic', on_delete=models.SET_NULL, null=True)
     name = models.CharField(max_length=200) #Room title
     description = models.TextField(null=True, blank=True)
-    # participants = models.ManyToManyField('accounts.User', related_name='participants', blank=True)
+    participants = models.ManyToManyField(User, related_name='participants', blank=True)
     updated_at = models.DateTimeField(auto_now=True) # Updates on every save  
     created = models.DateTimeField(auto_now_add=True)  # Set once on creation 
     
